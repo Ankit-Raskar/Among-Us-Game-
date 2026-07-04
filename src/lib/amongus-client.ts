@@ -76,25 +76,16 @@ let socket: Socket | null = null
 export function getSocket(): Socket {
   if (!socket) {
     // In production: use NEXT_PUBLIC_BACKEND_URL env var (set in Vercel)
-    // In development: use local Caddy gateway on port 81
+    // In development: use local backend on port 3003
     const isProduction = process.env.NODE_ENV === 'production'
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (isProduction ? '' : '/?XTransformPort=3003')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (isProduction ? '' : 'http://localhost:3003')
 
-    const options: any = {
-      path: '/',
+    socket = io(backendUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
-    }
-
-    if (isProduction && backendUrl) {
-      // Production: connect directly to Render backend URL
-      socket = io(backendUrl, options)
-    } else {
-      // Development: use Caddy gateway with XTransformPort
-      socket = io(backendUrl, options)
-    }
+    })
   }
   return socket
 }

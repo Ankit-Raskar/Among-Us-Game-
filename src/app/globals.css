@@ -120,3 +120,87 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ============ Mobile Landscape Force ============ */
+/* On phones in portrait, rotate the entire game 90deg so it appears landscape */
+@media screen and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  /* Already landscape — make canvas fill */
+  html, body { overflow: hidden; height: 100vh; height: 100dvh; }
+}
+
+/* Portrait phone — rotate the game 90 degrees */
+@media screen and (max-width: 500px) and (orientation: portrait) {
+  /* Rotate the whole page so user gets landscape view while holding phone vertically */
+  #game-root {
+    position: fixed;
+    top: 0;
+    left: 100vw;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100vh);
+    width: 100vh;
+    height: 100vw;
+    overflow: hidden;
+  }
+  /* Show a hint to rotate phone */
+  #rotate-hint { display: none !important; }
+}
+
+/* Hide scrollbars on mobile */
+@media (hover: none) and (pointer: coarse) {
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  body { -webkit-tap-highlight-color: transparent; }
+  /* Make buttons bigger for touch */
+  button { min-height: 44px; min-width: 44px; }
+}
+
+/* Mobile control buttons — bigger and easier to tap */
+.mobile-btn {
+  min-width: 64px !important;
+  min-height: 64px !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Joystick — bigger and more responsive */
+.joystick-base {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent text selection during gameplay */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Rotate hint overlay */
+#rotate-hint {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 2rem;
+}
+#rotate-hint .rotate-icon {
+  font-size: 4rem;
+  animation: rotate 2s ease-in-out infinite;
+}
+@keyframes rotate {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  #rotate-hint { display: flex !important; }
+}

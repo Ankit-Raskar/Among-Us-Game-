@@ -1,9 +1,19 @@
-import { createServer } from 'http'
+import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { Server } from 'socket.io'
 
-const httpServer = createServer()
+// Create HTTP server with a health check endpoint (for UptimeRobot monitoring)
+const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+  // Health check endpoint — returns 200 OK for any HTTP request
+  // This keeps the server awake when pinged by UptimeRobot
+  if (req.url === '/' || req.url === '/health' || req.url === '/ping') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ status: 'ok', message: 'Among Us backend is running' }))
+    return
+  }
+})
+
+// Use default Socket.io path (/socket.io/) so it doesn't intercept health checks
 const io = new Server(httpServer, {
-  path: '/',
   cors: { origin: '*', methods: ['GET', 'POST'] },
   pingTimeout: 60000,
   pingInterval: 25000,

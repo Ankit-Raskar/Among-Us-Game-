@@ -299,6 +299,7 @@ export function GameScreen({ room, myId, myRole, chatMessages }: Props) {
               else if (action === 'emergency') tryEmergency()
               else if (action === 'fix-sab') tryFixSabotage()
               else if (action === 'sabotage') setShowSabotagePanel(o => !o)
+              else if (action === 'vent') setShowVentPanel(o => !o)
               else if (action === 'map') setShowMap(o => !o)
               else if (action === 'chat') setChatOpen(o => !o)
             }}
@@ -419,7 +420,7 @@ export function GameScreen({ room, myId, myRole, chatMessages }: Props) {
 function MobileControls({ onMove, onStop, onAction, myRole, killCooldown, sabotageActive }: {
   onMove: (dx: number, dy: number) => void
   onStop: () => void
-  onAction: (a: 'task' | 'kill' | 'report' | 'emergency' | 'fix-sab' | 'sabotage' | 'map' | 'chat') => void
+  onAction: (a: 'task' | 'kill' | 'report' | 'emergency' | 'fix-sab' | 'sabotage' | 'vent' | 'map' | 'chat') => void
   myRole: Role
   killCooldown: number
   sabotageActive: boolean
@@ -447,19 +448,32 @@ function MobileControls({ onMove, onStop, onAction, myRole, killCooldown, sabota
     onMove(dx / len, dy / len)
   }
   return (
-    <div className="md:hidden absolute inset-0 pointer-events-none">
-      <div ref={baseRef} className="absolute bottom-4 left-4 w-32 h-32 rounded-full bg-white/5 border-2 border-white/20 pointer-events-auto touch-none"
+    <div className="md:hidden absolute inset-0 pointer-events-none z-10">
+      {/* Joystick — bottom left, bigger */}
+      <div ref={baseRef} className="joystick-base absolute bottom-6 left-6 w-36 h-36 rounded-full bg-white/10 border-2 border-white/30 pointer-events-auto touch-none backdrop-blur-sm"
         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-        <div className="absolute w-12 h-12 rounded-full bg-yellow-400/80 border-2 border-white" style={{ left: `calc(50% - 24px + ${joystick.x}px)`, top: `calc(50% - 24px + ${joystick.y}px)` }} />
+        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-xs font-bold">MOVE</div>
+        <div className="absolute w-14 h-14 rounded-full bg-yellow-400 border-2 border-white shadow-lg" style={{ left: `calc(50% - 28px + ${joystick.x}px)`, top: `calc(50% - 28px + ${joystick.y}px)` }} />
       </div>
-      <div className="absolute bottom-4 right-4 grid grid-cols-2 gap-2 pointer-events-auto">
-        {myRole === 'crewmate' && <button onClick={() => onAction('task')} className="w-14 h-14 rounded-full bg-yellow-400 text-black font-bold text-xs shadow-lg active:scale-95">TASK</button>}
-        {myRole === 'impostor' && <button onClick={() => onAction('kill')} disabled={killCooldown > 0} className="w-14 h-14 rounded-full bg-red-500 text-white font-bold text-xs shadow-lg active:scale-95 disabled:opacity-40">{killCooldown > 0 ? Math.ceil(killCooldown / 1000) + 's' : 'KILL'}</button>}
-        <button onClick={() => onAction('report')} className="w-14 h-14 rounded-full bg-orange-500 text-white font-bold text-xs shadow-lg active:scale-95">REPORT</button>
-        <button onClick={() => onAction('emergency')} className="w-14 h-14 rounded-full bg-pink-500 text-white font-bold text-[10px] shadow-lg active:scale-95">EMERGENCY</button>
-        {sabotageActive && myRole === 'crewmate' && <button onClick={() => onAction('fix-sab')} className="w-14 h-14 rounded-full bg-red-600 text-white font-bold text-[10px] shadow-lg active:scale-95 animate-pulse">FIX SAB</button>}
-        {myRole === 'impostor' && <button onClick={() => onAction('sabotage')} className="w-14 h-14 rounded-full bg-purple-600 text-white font-bold text-[10px] shadow-lg active:scale-95">SABOTAGE</button>}
-        <button onClick={() => onAction('map')} className="w-14 h-14 rounded-full bg-white/20 text-white font-bold text-xs shadow-lg active:scale-95">MAP</button>
+
+      {/* Action buttons — bottom right, bigger and more spread out */}
+      <div className="absolute bottom-6 right-6 grid grid-cols-3 gap-2.5 pointer-events-auto">
+        {myRole === 'crewmate' && (
+          <button onClick={() => onAction('task')} className="mobile-btn w-16 h-16 rounded-full bg-yellow-400 text-black font-bold text-xs shadow-lg active:scale-90 transition-transform">TASK</button>
+        )}
+        {myRole === 'impostor' && (
+          <>
+            <button onClick={() => onAction('kill')} disabled={killCooldown > 0} className="mobile-btn w-16 h-16 rounded-full bg-red-500 text-white font-bold text-xs shadow-lg active:scale-90 disabled:opacity-40 transition-transform">{killCooldown > 0 ? Math.ceil(killCooldown / 1000) + 's' : 'KILL'}</button>
+            <button onClick={() => onAction('sabotage')} className="mobile-btn w-16 h-16 rounded-full bg-purple-600 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">SABOTAGE</button>
+            <button onClick={() => onAction('vent')} className="mobile-btn w-16 h-16 rounded-full bg-teal-600 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">VENT</button>
+          </>
+        )}
+        <button onClick={() => onAction('report')} className="mobile-btn w-16 h-16 rounded-full bg-orange-500 text-white font-bold text-xs shadow-lg active:scale-90 transition-transform">REPORT</button>
+        <button onClick={() => onAction('emergency')} className="mobile-btn w-16 h-16 rounded-full bg-pink-500 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">SOS</button>
+        {sabotageActive && myRole === 'crewmate' && (
+          <button onClick={() => onAction('fix-sab')} className="mobile-btn w-16 h-16 rounded-full bg-red-600 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform animate-pulse">FIX</button>
+        )}
+        <button onClick={() => onAction('map')} className="mobile-btn w-16 h-16 rounded-full bg-white/25 text-white font-bold text-xs shadow-lg active:scale-90 transition-transform">MAP</button>
       </div>
     </div>
   )

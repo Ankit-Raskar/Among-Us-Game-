@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,12 +12,28 @@ export const metadata: Metadata = {
   description: "A real-time 3D multiplayer Among Us clone. Create a room, share the code, and play with friends!",
   keywords: ["among us", "multiplayer game", "impostor", "crewmate", "3d"],
   authors: [{ name: "Z.ai" }],
-};
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+      <head>
+        {/* Force landscape orientation on mobile */}
+        <meta name="screen-orientation" content="landscape" />
+        <meta name="x5-orientation" content="landscape" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground overflow-hidden`}>
         {children}
         <Toaster />
         <Sonner position="top-center" richColors />
