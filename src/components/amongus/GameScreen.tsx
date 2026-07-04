@@ -282,7 +282,7 @@ export function GameScreen({ room, myId, myRole, chatMessages }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex relative overflow-hidden">
         <div ref={containerRef} className="flex-1 relative">
           <GameScene3D myId={myId} myColor={myColor} playersRef={playersRef} sabotageRef={sabotageRef} cameraYawRef={cameraYawRef} />
           <MobileControls
@@ -307,7 +307,7 @@ export function GameScreen({ room, myId, myRole, chatMessages }: Props) {
           />
         </div>
 
-        <div className="hidden md:flex w-64 bg-black/40 border-l border-white/10 flex-col">
+        <div className="hidden md:flex w-64 bg-black/40 border-l border-white/10 flex-col desktop-sidebar">
           <div className="p-4 border-b border-white/10">
             <h3 className="font-bold mb-2 flex items-center gap-2"><span>📋</span> {myRole === 'crewmate' ? 'Your Tasks' : 'Sabotage Targets'}</h3>
             {myRole === 'crewmate' ? (
@@ -341,7 +341,7 @@ export function GameScreen({ room, myId, myRole, chatMessages }: Props) {
         </div>
       </div>
 
-      <div className="hidden md:flex bg-black/40 border-t border-white/10 px-4 py-2 justify-center gap-3">
+      <div className="hidden md:flex bg-black/40 border-t border-white/10 px-4 py-2 justify-center gap-3 touch-controls-hidden">
         {myRole === 'crewmate' && me?.alive && (
           <button onClick={tryUseTask} className="px-5 py-2 bg-yellow-400 text-black font-bold rounded-lg hover:bg-yellow-300 transition-all">Use Task (E)</button>
         )}
@@ -426,13 +426,22 @@ function MobileControls({ onMove, onStop, onAction, myRole, killCooldown, sabota
   sabotageActive: boolean
 }) {
   const [joystick, setJoystick] = useState<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false })
+  const [isTouch, setIsTouch] = useState(false)
   const baseRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Detect touch device — show mobile controls on ALL touch devices regardless of screen size
+    const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    queueMicrotask(() => setIsTouch(touch))
+  }, [])
+
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault()
     const rect = baseRef.current?.getBoundingClientRect(); if (!rect) return
     const t = e.touches[0]
-    setJoystick({ x: t.clientX - rect.left - rect.width / 2, y: t.clientY - rect.top - rect.height / 2, active: true })
-    updateMove(t.clientX - rect.left - rect.width / 2, t.clientY - rect.top - rect.height / 2)
+    const dx = t.clientX - rect.left - rect.width / 2, dy = t.clientY - rect.top - rect.height / 2
+    setJoystick({ x: dx, y: dy, active: true })
+    updateMove(dx, dy)
   }
   const handleTouchMove = (e: React.TouchEvent) => {
     e.preventDefault()
@@ -447,33 +456,37 @@ function MobileControls({ onMove, onStop, onAction, myRole, killCooldown, sabota
     if (len < 5) { onStop(); return }
     onMove(dx / len, dy / len)
   }
+
+  // Don't render if not a touch device
+  if (!isTouch) return null
+
   return (
-    <div className="md:hidden absolute inset-0 pointer-events-none z-10">
-      {/* Joystick — bottom left, bigger */}
-      <div ref={baseRef} className="joystick-base absolute bottom-6 left-6 w-36 h-36 rounded-full bg-white/10 border-2 border-white/30 pointer-events-auto touch-none backdrop-blur-sm"
+    <div className="absolute inset-0 pointer-events-none z-10 select-none">
+      {/* Joystick — bottom left */}
+      <div ref={baseRef} className="joystick-base absolute bottom-3 left-3 w-28 h-28 rounded-full bg-white/10 border-2 border-white/30 pointer-events-auto touch-none backdrop-blur-sm"
         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-xs font-bold">MOVE</div>
-        <div className="absolute w-14 h-14 rounded-full bg-yellow-400 border-2 border-white shadow-lg" style={{ left: `calc(50% - 28px + ${joystick.x}px)`, top: `calc(50% - 28px + ${joystick.y}px)` }} />
+        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-[10px] font-bold">MOVE</div>
+        <div className="absolute w-12 h-12 rounded-full bg-yellow-400 border-2 border-white shadow-lg" style={{ left: `calc(50% - 24px + ${joystick.x}px)`, top: `calc(50% - 24px + ${joystick.y}px)` }} />
       </div>
 
-      {/* Action buttons — bottom right, bigger and more spread out */}
-      <div className="absolute bottom-6 right-6 grid grid-cols-3 gap-2.5 pointer-events-auto">
+      {/* Action buttons — bottom right, compact grid */}
+      <div className="absolute bottom-3 right-3 grid grid-cols-3 gap-1.5 pointer-events-auto">
         {myRole === 'crewmate' && (
-          <button onClick={() => onAction('task')} className="mobile-btn w-16 h-16 rounded-full bg-yellow-400 text-black font-bold text-xs shadow-lg active:scale-90 transition-transform">TASK</button>
+          <button onClick={() => onAction('task')} className="mobile-btn w-14 h-14 rounded-full bg-yellow-400 text-black font-bold text-[10px] shadow-lg active:scale-90 transition-transform">TASK</button>
         )}
         {myRole === 'impostor' && (
           <>
-            <button onClick={() => onAction('kill')} disabled={killCooldown > 0} className="mobile-btn w-16 h-16 rounded-full bg-red-500 text-white font-bold text-xs shadow-lg active:scale-90 disabled:opacity-40 transition-transform">{killCooldown > 0 ? Math.ceil(killCooldown / 1000) + 's' : 'KILL'}</button>
-            <button onClick={() => onAction('sabotage')} className="mobile-btn w-16 h-16 rounded-full bg-purple-600 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">SABOTAGE</button>
-            <button onClick={() => onAction('vent')} className="mobile-btn w-16 h-16 rounded-full bg-teal-600 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">VENT</button>
+            <button onClick={() => onAction('kill')} disabled={killCooldown > 0} className="mobile-btn w-14 h-14 rounded-full bg-red-500 text-white font-bold text-[10px] shadow-lg active:scale-90 disabled:opacity-40 transition-transform">{killCooldown > 0 ? Math.ceil(killCooldown / 1000) + 's' : 'KILL'}</button>
+            <button onClick={() => onAction('sabotage')} className="mobile-btn w-14 h-14 rounded-full bg-purple-600 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">SAB</button>
+            <button onClick={() => onAction('vent')} className="mobile-btn w-14 h-14 rounded-full bg-teal-600 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">VENT</button>
           </>
         )}
-        <button onClick={() => onAction('report')} className="mobile-btn w-16 h-16 rounded-full bg-orange-500 text-white font-bold text-xs shadow-lg active:scale-90 transition-transform">REPORT</button>
-        <button onClick={() => onAction('emergency')} className="mobile-btn w-16 h-16 rounded-full bg-pink-500 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">SOS</button>
+        <button onClick={() => onAction('report')} className="mobile-btn w-14 h-14 rounded-full bg-orange-500 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">REPORT</button>
+        <button onClick={() => onAction('emergency')} className="mobile-btn w-14 h-14 rounded-full bg-pink-500 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">SOS</button>
         {sabotageActive && myRole === 'crewmate' && (
-          <button onClick={() => onAction('fix-sab')} className="mobile-btn w-16 h-16 rounded-full bg-red-600 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform animate-pulse">FIX</button>
+          <button onClick={() => onAction('fix-sab')} className="mobile-btn w-14 h-14 rounded-full bg-red-600 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform animate-pulse">FIX</button>
         )}
-        <button onClick={() => onAction('map')} className="mobile-btn w-16 h-16 rounded-full bg-white/25 text-white font-bold text-xs shadow-lg active:scale-90 transition-transform">MAP</button>
+        <button onClick={() => onAction('map')} className="mobile-btn w-14 h-14 rounded-full bg-white/25 text-white font-bold text-[10px] shadow-lg active:scale-90 transition-transform">MAP</button>
       </div>
     </div>
   )

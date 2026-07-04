@@ -100,30 +100,20 @@ export default function Home() {
   }
 
   return (
-    <>
-      {/* Rotate hint for portrait mobile — only during gameplay */}
-      {view === 'game' && (
-        <div id="rotate-hint">
-          <div className="rotate-icon">📱↻</div>
-          <h2 className="text-xl font-bold mt-4">Rotate Your Phone</h2>
-          <p className="text-white/60 mt-2">This game is best played in landscape mode.</p>
+    <div id="game-root" className="min-h-screen bg-[#0a0a1a] text-white no-select">
+      {!connected && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a1a] z-50">
+          <div className="text-center">
+            <div className="text-2xl mb-4 animate-pulse">Connecting to server...</div>
+            <div className="w-12 h-12 mx-auto border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       )}
-      <div id="game-root" className={`min-h-screen bg-[#0a0a1a] text-white no-select ${view === 'game' ? 'gameplay-active' : ''}`}>
-        {!connected && (
-          <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a1a] z-50">
-            <div className="text-center">
-              <div className="text-2xl mb-4 animate-pulse">Connecting to server...</div>
-              <div className="w-12 h-12 mx-auto border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          </div>
-        )}
-        {connected && view === 'home' && <HomeScreen onCreate={handleCreate} onJoin={handleJoin} />}
-        {connected && view === 'lobby' && room && <LobbyScreen room={room} myId={myId} chatMessages={chatMessages} />}
-        {connected && view === 'game' && room && myRole && <GameScreen room={room} myId={myId} myRole={myRole} chatMessages={chatMessages} />}
-        {connected && view === 'meeting' && room && <MeetingScreen room={room} myId={myId} myRole={myRole} chatMessages={chatMessages} voteResult={voteResult} />}
-        {connected && view === 'gameover' && room && <GameOverScreen room={room} myRole={myRole} myId={myId} onLeave={handleLeave} />}
-      </div>
-    </>
+      {connected && view === 'home' && <HomeScreen onCreate={handleCreate} onJoin={handleJoin} />}
+      {connected && view === 'lobby' && room && <LobbyScreen room={room} myId={myId} chatMessages={chatMessages} />}
+      {connected && view === 'game' && room && myRole && <GameScreen room={room} myId={myId} myRole={myRole} chatMessages={chatMessages} />}
+      {connected && view === 'meeting' && room && <MeetingScreen room={room} myId={myId} myRole={myRole} chatMessages={chatMessages} voteResult={voteResult} />}
+      {connected && view === 'gameover' && room && <GameOverScreen room={room} myRole={myRole} myId={myId} onLeave={handleLeave} />}
+    </div>
   )
 }
