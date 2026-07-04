@@ -122,8 +122,12 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
     const canvas = renderer.domElement
     canvas.style.cursor = 'crosshair'
 
-    // Pointer lock for FPS-style mouse control
+    // Detect touch device
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+    // Pointer lock for FPS-style mouse control (desktop only)
     const requestLock = () => {
+      if (isTouchDevice) return  // Don't use pointer lock on touch devices
       if (document.pointerLockElement !== canvas) canvas.requestPointerLock()
     }
     const onLockChange = () => {
@@ -135,14 +139,50 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
       // FPS-style: mouse right = look right, mouse up = look up
       const sensitivity = 0.0025
       targetYawRef.current -= e.movementX * sensitivity
-      // FIX: mouse up (movementY negative) should look up (pitch decrease = look up)
-      // lookY = 32 - sin(pitch)*100, so pitch<0 = look up. mouse up = movementY<0 = pitch should decrease.
       targetPitchRef.current += e.movementY * sensitivity
       targetPitchRef.current = Math.max(-1.2, Math.min(1.2, targetPitchRef.current))
     }
-    canvas.addEventListener('click', requestLock)
-    document.addEventListener('pointerlockchange', onLockChange)
-    document.addEventListener('mousemove', onMouseMove)
+
+    // Touch camera control (mobile) — drag on right 60% of screen to rotate camera
+    // Left 40% is reserved for joystick
+    let lastTouchX = 0, lastTouchY = 0
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 0) return
+      const t = e.touches[0]
+      const rect = canvas.getBoundingClientRect()
+      // Only use touches on the right 60% of screen (left is joystick + buttons)
+      // Actually, let's use touches that start in the upper/middle area (avoiding bottom controls)
+      const relativeY = (t.clientY - rect.top) / rect.height
+      if (relativeY > 0.65) return  // Bottom 35% is for controls
+      lastTouchX = t.clientX
+      lastTouchY = t.clientY
+    }
+    const onTouchMoveCamera = (e: TouchEvent) => {
+      if (e.touches.length === 0) return
+      const t = e.touches[0]
+      const rect = canvas.getBoundingClientRect()
+      const relativeY = (t.clientY - rect.top) / rect.height
+      if (relativeY > 0.65) return  // Bottom 35% is for controls
+      const dx = t.clientX - lastTouchX
+      const dy = t.clientY - lastTouchY
+      lastTouchX = t.clientX
+      lastTouchY = t.clientY
+      // Touch drag sensitivity
+      const sensitivity = 0.005
+      targetYawRef.current -= dx * sensitivity
+      targetPitchRef.current += dy * sensitivity
+      targetPitchRef.current = Math.max(-1.2, Math.min(1.2, targetPitchRef.current))
+    }
+
+    if (!isTouchDevice) {
+      canvas.addEventListener('click', requestLock)
+      document.addEventListener('pointerlockchange', onLockChange)
+      document.addEventListener('mousemove', onMouseMove)
+    } else {
+      // Touch device — use drag to rotate camera
+      canvas.addEventListener('touchstart', onTouchStart, { passive: true })
+      canvas.addEventListener('touchmove', onTouchMoveCamera, { passive: true })
+    }
 
     // Lighting — backrooms yellow fluorescent vibe
     // Higher ambient since we removed per-room lights (perf optimization)
@@ -453,10 +493,15 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
     return () => {
       cancelAnimationFrame(animationFrameRef.current)
       window.removeEventListener('resize', handleResize)
-      canvas.removeEventListener('click', requestLock)
-      document.removeEventListener('pointerlockchange', onLockChange)
-      document.removeEventListener('mousemove', onMouseMove)
-      if (document.pointerLockElement === canvas) document.exitPointerLock()
+      if (!isTouchDevice) {
+        canvas.removeEventListener('click', requestLock)
+        document.removeEventListener('pointerlockchange', onLockChange)
+        document.removeEventListener('mousemove', onMouseMove)
+        if (document.pointerLockElement === canvas) document.exitPointerLock()
+      } else {
+        canvas.removeEventListener('touchstart', onTouchStart)
+        canvas.removeEventListener('touchmove', onTouchMoveCamera)
+      }
       renderer.dispose()
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
       playerMeshesRef.current.clear()
@@ -467,19 +512,43 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
   return (
     <div className="w-full h-full relative">
       <div ref={mountRef} className="w-full h-full" />
-      <PointerLockHint />
+      <CameraHint />
     </div>
   )
 }
 
-function PointerLockHint() {
+function CameraHint() {
+  const [isTouch, setIsTouch] = useState(false)
   const [locked, setLocked] = useState(false)
+  const [hintSeen, setHintSeen] = useState(false)
+
   useEffect(() => {
+    const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    queueMicrotask(() => setIsTouch(touch))
     const onChange = () => setLocked(!!document.pointerLockElement)
     document.addEventListener('pointerlockchange', onChange)
     return () => document.removeEventListener('pointerlockchange', onChange)
   }, [])
-  if (locked) return null
+
+  // Hide hint after 3 seconds on touch, or when locked on desktop
+  useEffect(() => {
+    if (locked) return
+    const t = setTimeout(() => setHintSeen(true), 4000)
+    return () => clearTimeout(t)
+  }, [locked])
+
+  if (locked || hintSeen) return null
+
+  if (isTouch) {
+    return (
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 pointer-events-none z-20">
+        <div className="bg-black/70 border border-yellow-400/50 rounded-xl px-4 py-2 text-center">
+          <div className="text-yellow-400 font-bold text-xs">👆 Drag screen to look around</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="bg-black/70 border border-yellow-400/50 rounded-xl px-6 py-3 text-center">
