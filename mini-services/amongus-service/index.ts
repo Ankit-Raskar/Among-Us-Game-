@@ -525,5 +525,5 @@ setInterval(() => {
   }
 }, 50)
 
-const PORT = 3003
+const PORT = parseInt(process.env.PORT || '3003', 10)
 httpServer.listen(PORT, () => console.log(`[amongus-service] listening on :${PORT}`))
