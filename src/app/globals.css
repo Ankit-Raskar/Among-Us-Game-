@@ -132,9 +132,9 @@
 
 /* Mobile control buttons — sized for touch */
 .mobile-btn {
-  min-width: 56px !important;
-  min-height: 56px !important;
-  font-size: 10px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  font-size: 9px !important;
   font-weight: bold !important;
   touch-action: manipulation;
   user-select: none;

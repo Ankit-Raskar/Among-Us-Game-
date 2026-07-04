@@ -122,12 +122,12 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
     const canvas = renderer.domElement
     canvas.style.cursor = 'crosshair'
 
-    // Detect touch device
+    // Detect touch device (for hint text only)
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
-    // Pointer lock for FPS-style mouse control (desktop only)
+    // Pointer lock for FPS-style mouse control (desktop)
+    // Always enable — laptops with touch screens still need mouse support
     const requestLock = () => {
-      if (isTouchDevice) return  // Don't use pointer lock on touch devices
       if (document.pointerLockElement !== canvas) canvas.requestPointerLock()
     }
     const onLockChange = () => {
@@ -136,53 +136,50 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
     }
     const onMouseMove = (e: MouseEvent) => {
       if (!pointerLockedRef.current) return
-      // FPS-style: mouse right = look right, mouse up = look up
       const sensitivity = 0.0025
       targetYawRef.current -= e.movementX * sensitivity
       targetPitchRef.current += e.movementY * sensitivity
       targetPitchRef.current = Math.max(-1.2, Math.min(1.2, targetPitchRef.current))
     }
 
-    // Touch camera control (mobile) — drag on right 60% of screen to rotate camera
-    // Left 40% is reserved for joystick
+    // Touch camera control (mobile) — drag on upper part of screen
     let lastTouchX = 0, lastTouchY = 0
+    let touchActive = false
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 0) return
       const t = e.touches[0]
       const rect = canvas.getBoundingClientRect()
-      // Only use touches on the right 60% of screen (left is joystick + buttons)
-      // Actually, let's use touches that start in the upper/middle area (avoiding bottom controls)
       const relativeY = (t.clientY - rect.top) / rect.height
       if (relativeY > 0.65) return  // Bottom 35% is for controls
       lastTouchX = t.clientX
       lastTouchY = t.clientY
+      touchActive = true
     }
     const onTouchMoveCamera = (e: TouchEvent) => {
-      if (e.touches.length === 0) return
+      if (!touchActive || e.touches.length === 0) return
       const t = e.touches[0]
       const rect = canvas.getBoundingClientRect()
       const relativeY = (t.clientY - rect.top) / rect.height
-      if (relativeY > 0.65) return  // Bottom 35% is for controls
+      if (relativeY > 0.65) return
       const dx = t.clientX - lastTouchX
       const dy = t.clientY - lastTouchY
       lastTouchX = t.clientX
       lastTouchY = t.clientY
-      // Touch drag sensitivity
       const sensitivity = 0.005
       targetYawRef.current -= dx * sensitivity
       targetPitchRef.current += dy * sensitivity
       targetPitchRef.current = Math.max(-1.2, Math.min(1.2, targetPitchRef.current))
     }
+    const onTouchEndCamera = () => { touchActive = false }
 
-    if (!isTouchDevice) {
-      canvas.addEventListener('click', requestLock)
-      document.addEventListener('pointerlockchange', onLockChange)
-      document.addEventListener('mousemove', onMouseMove)
-    } else {
-      // Touch device — use drag to rotate camera
-      canvas.addEventListener('touchstart', onTouchStart, { passive: true })
-      canvas.addEventListener('touchmove', onTouchMoveCamera, { passive: true })
-    }
+    // Always enable BOTH mouse and touch — they don't conflict
+    canvas.addEventListener('click', requestLock)
+    document.addEventListener('pointerlockchange', onLockChange)
+    document.addEventListener('mousemove', onMouseMove)
+    // Touch handlers for mobile
+    canvas.addEventListener('touchstart', onTouchStart, { passive: true })
+    canvas.addEventListener('touchmove', onTouchMoveCamera, { passive: true })
+    canvas.addEventListener('touchend', onTouchEndCamera, { passive: true })
 
     // Lighting — backrooms yellow fluorescent vibe
     // Higher ambient since we removed per-room lights (perf optimization)
@@ -493,15 +490,13 @@ export function GameScene3D({ myId, myColor, playersRef, sabotageRef, cameraYawR
     return () => {
       cancelAnimationFrame(animationFrameRef.current)
       window.removeEventListener('resize', handleResize)
-      if (!isTouchDevice) {
-        canvas.removeEventListener('click', requestLock)
-        document.removeEventListener('pointerlockchange', onLockChange)
-        document.removeEventListener('mousemove', onMouseMove)
-        if (document.pointerLockElement === canvas) document.exitPointerLock()
-      } else {
-        canvas.removeEventListener('touchstart', onTouchStart)
-        canvas.removeEventListener('touchmove', onTouchMoveCamera)
-      }
+      canvas.removeEventListener('click', requestLock)
+      document.removeEventListener('pointerlockchange', onLockChange)
+      document.removeEventListener('mousemove', onMouseMove)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      canvas.removeEventListener('touchmove', onTouchMoveCamera)
+      canvas.removeEventListener('touchend', onTouchEndCamera)
+      if (document.pointerLockElement === canvas) document.exitPointerLock()
       renderer.dispose()
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
       playerMeshesRef.current.clear()
