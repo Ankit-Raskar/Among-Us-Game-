@@ -469,24 +469,24 @@ function MobileControls({ onMove, onStop, onAction, myRole, killCooldown, sabota
         <div className="absolute w-12 h-12 rounded-full bg-yellow-400 border-2 border-white shadow-lg" style={{ left: `calc(50% - 24px + ${joystick.x}px)`, top: `calc(50% - 24px + ${joystick.y}px)` }} />
       </div>
 
-      {/* Action buttons — bottom right, compact grid */}
-      <div className="absolute bottom-3 right-3 grid grid-cols-2 sm:grid-cols-3 gap-1.5 pointer-events-auto max-w-[180px]">
-        {myRole === 'crewmate' && (
-          <button onClick={() => onAction('task')} className="mobile-btn w-12 h-12 rounded-full bg-yellow-400 text-black font-bold text-[9px] shadow-lg active:scale-90 transition-transform">TASK</button>
+      {/* Action buttons — bottom right, flex wrap so all buttons fit */}
+      <div className="absolute bottom-3 right-3 flex flex-wrap-reverse justify-end gap-1.5 pointer-events-auto" style={{ maxWidth: '170px' }}>
+        <button onClick={() => onAction('map')} className="mobile-btn w-11 h-11 rounded-full bg-white/25 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">MAP</button>
+        <button onClick={() => onAction('emergency')} className="mobile-btn w-11 h-11 rounded-full bg-pink-500 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform">SOS</button>
+        <button onClick={() => onAction('report')} className="mobile-btn w-11 h-11 rounded-full bg-orange-500 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">REP</button>
+        {sabotageActive && myRole === 'crewmate' && (
+          <button onClick={() => onAction('fix-sab')} className="mobile-btn w-11 h-11 rounded-full bg-red-600 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform animate-pulse">FIX</button>
         )}
         {myRole === 'impostor' && (
           <>
-            <button onClick={() => onAction('kill')} disabled={killCooldown > 0} className="mobile-btn w-12 h-12 rounded-full bg-red-500 text-white font-bold text-[9px] shadow-lg active:scale-90 disabled:opacity-40 transition-transform">{killCooldown > 0 ? Math.ceil(killCooldown / 1000) + 's' : 'KILL'}</button>
-            <button onClick={() => onAction('sabotage')} className="mobile-btn w-12 h-12 rounded-full bg-purple-600 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform">SAB</button>
-            <button onClick={() => onAction('vent')} className="mobile-btn w-12 h-12 rounded-full bg-teal-600 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform">VENT</button>
+            <button onClick={() => onAction('vent')} className="mobile-btn w-11 h-11 rounded-full bg-teal-600 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform">VENT</button>
+            <button onClick={() => onAction('sabotage')} className="mobile-btn w-11 h-11 rounded-full bg-purple-600 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform">SAB</button>
+            <button onClick={() => onAction('kill')} disabled={killCooldown > 0} className="mobile-btn w-11 h-11 rounded-full bg-red-500 text-white font-bold text-[9px] shadow-lg active:scale-90 disabled:opacity-40 transition-transform">{killCooldown > 0 ? Math.ceil(killCooldown / 1000) + 's' : 'KILL'}</button>
           </>
         )}
-        <button onClick={() => onAction('report')} className="mobile-btn w-12 h-12 rounded-full bg-orange-500 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">REP</button>
-        <button onClick={() => onAction('emergency')} className="mobile-btn w-12 h-12 rounded-full bg-pink-500 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform">SOS</button>
-        {sabotageActive && myRole === 'crewmate' && (
-          <button onClick={() => onAction('fix-sab')} className="mobile-btn w-12 h-12 rounded-full bg-red-600 text-white font-bold text-[8px] shadow-lg active:scale-90 transition-transform animate-pulse">FIX</button>
+        {myRole === 'crewmate' && (
+          <button onClick={() => onAction('task')} className="mobile-btn w-11 h-11 rounded-full bg-yellow-400 text-black font-bold text-[9px] shadow-lg active:scale-90 transition-transform">TASK</button>
         )}
-        <button onClick={() => onAction('map')} className="mobile-btn w-12 h-12 rounded-full bg-white/25 text-white font-bold text-[9px] shadow-lg active:scale-90 transition-transform">MAP</button>
       </div>
     </div>
   )
