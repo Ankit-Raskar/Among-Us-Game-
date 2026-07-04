@@ -101,13 +101,15 @@ export default function Home() {
 
   return (
     <>
-      {/* Rotate hint for portrait mobile */}
-      <div id="rotate-hint">
-        <div className="rotate-icon">📱↻</div>
-        <h2 className="text-xl font-bold mt-4">Rotate Your Phone</h2>
-        <p className="text-white/60 mt-2">This game is best played in landscape mode.</p>
-      </div>
-      <div id="game-root" className="min-h-screen bg-[#0a0a1a] text-white no-select">
+      {/* Rotate hint for portrait mobile — only during gameplay */}
+      {view === 'game' && (
+        <div id="rotate-hint">
+          <div className="rotate-icon">📱↻</div>
+          <h2 className="text-xl font-bold mt-4">Rotate Your Phone</h2>
+          <p className="text-white/60 mt-2">This game is best played in landscape mode.</p>
+        </div>
+      )}
+      <div id="game-root" className={`min-h-screen bg-[#0a0a1a] text-white no-select ${view === 'game' ? 'gameplay-active' : ''}`}>
         {!connected && (
           <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a1a] z-50">
             <div className="text-center">

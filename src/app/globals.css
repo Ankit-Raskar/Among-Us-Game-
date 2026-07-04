@@ -121,36 +121,20 @@
   }
 }
 
-/* ============ Mobile Landscape Force ============ */
-/* On phones in portrait, rotate the entire game 90deg so it appears landscape */
+/* ============ Mobile Optimizations ============ */
+/* Landscape phones — lock scroll during gameplay */
 @media screen and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
-  /* Already landscape — make canvas fill */
-  html, body { overflow: hidden; height: 100vh; height: 100dvh; }
+  html, body { height: 100vh; height: 100dvh; }
 }
 
-/* Portrait phone — rotate the game 90 degrees */
-@media screen and (max-width: 500px) and (orientation: portrait) {
-  /* Rotate the whole page so user gets landscape view while holding phone vertically */
-  #game-root {
-    position: fixed;
-    top: 0;
-    left: 100vw;
-    transform-origin: top left;
-    transform: rotate(90deg) translateY(-100vh);
-    width: 100vh;
-    height: 100vw;
-    overflow: hidden;
-  }
-  /* Show a hint to rotate phone */
-  #rotate-hint { display: none !important; }
-}
-
-/* Hide scrollbars on mobile */
+/* Hide scrollbars on mobile but keep scrolling functional */
 @media (hover: none) and (pointer: coarse) {
   ::-webkit-scrollbar { width: 0; height: 0; }
   body { -webkit-tap-highlight-color: transparent; }
   /* Make buttons bigger for touch */
   button { min-height: 44px; min-width: 44px; }
+  /* Allow vertical scrolling on all containers by default */
+  * { -webkit-overflow-scrolling: touch; }
 }
 
 /* Mobile control buttons — bigger and easier to tap */
@@ -178,7 +162,7 @@
   -webkit-touch-callout: none;
 }
 
-/* Rotate hint overlay */
+/* Rotate hint overlay — only shows during gameplay in portrait */
 #rotate-hint {
   display: none;
   position: fixed;
@@ -201,6 +185,7 @@
   50% { transform: rotate(90deg); }
 }
 
+/* Only show rotate hint during active gameplay (not home/lobby) */
 @media screen and (max-width: 768px) and (orientation: portrait) {
-  #rotate-hint { display: flex !important; }
+  .gameplay-active #rotate-hint { display: flex !important; }
 }
